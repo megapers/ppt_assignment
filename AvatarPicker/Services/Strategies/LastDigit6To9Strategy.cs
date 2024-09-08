@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Collections.Generic;
-using Models; // Add this line to import the namespace containing the Image class
+using Models;
 
 public class LastDigit6To9Strategy : IImageRetrievalStrategy
 {

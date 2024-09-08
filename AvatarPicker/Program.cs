@@ -1,10 +1,10 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register new services
+
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit6To9Strategy>();
 builder.Services.AddScoped<IImageService, ImageService>();
 
@@ -18,7 +18,7 @@ app.UseDefaultFiles(new DefaultFilesOptions
 });
 app.UseStaticFiles();
 
-// Add this Minimal API endpoint
+
 app.MapGet("/avatar", async (string userIdentifier, IImageService imageService) =>
 {
     var imageUrl = await imageService.GetImageUrlAsync(userIdentifier);
