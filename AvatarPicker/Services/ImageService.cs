@@ -1,17 +1,20 @@
 public class ImageService : IImageService
 {
-    private readonly IImageRetrievalStrategy _strategy;
+    private readonly IEnumerable<IImageRetrievalStrategy> _strategies;
 
-    public ImageService(IImageRetrievalStrategy strategy)
+    public ImageService(IEnumerable<IImageRetrievalStrategy> strategies)
     {
-        _strategy = strategy;
+        _strategies = strategies;
     }
 
     public async Task<string> GetImageUrlAsync(string userIdentifier)
     {
-        if (_strategy.CanApply(userIdentifier))
+        foreach (var strategy in _strategies)
         {
-            return await _strategy.GetImageUrlAsync(userIdentifier);
+            if (strategy.CanApply(userIdentifier))
+            {
+                return await strategy.GetImageUrlAsync(userIdentifier);
+            }
         }
         return "https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150";
     }

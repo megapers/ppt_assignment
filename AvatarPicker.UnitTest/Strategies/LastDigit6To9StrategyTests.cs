@@ -1,6 +1,7 @@
 using Moq;
 using Microsoft.AspNetCore.Hosting;
 using System.Text.Json;
+using AvatarPicker.Services.Strategies;
 
 namespace AvatarPicker.UnitTest;
 
@@ -17,7 +18,6 @@ public class LastDigit6To9StrategyTests
         _mockEnvironment.Setup(e => e.ContentRootPath).Returns(TestContext.CurrentContext.TestDirectory);
         _strategy = new LastDigit6To9Strategy(_mockEnvironment.Object);
 
-        // Create a mock db.json file for testing
         var mockData = new { images = new[] { new { id = 6, url = "https://test.com/image6.png" } } };
         var json = JsonSerializer.Serialize(mockData);
         Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data"));

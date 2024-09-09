@@ -1,23 +1,24 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.EntityFrameworkCore;
+using AvatarPicker.Data;
+using AvatarPicker.Services.Strategies;
 
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddDbContext<AvatarDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit6To9Strategy>();
+builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit1To5Strategy>();
 builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-
-app.UseDefaultFiles(new DefaultFilesOptions
-{
-    DefaultFileNames = new List<string> { "index.html" }
-});
+app.UseDefaultFiles();
 app.UseStaticFiles();
-
 
 app.MapGet("/avatar", async (string userIdentifier, IImageService imageService) =>
 {

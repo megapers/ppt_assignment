@@ -1,6 +1,7 @@
 using System.Text.Json;
-using System.Collections.Generic;
-using Models;
+using AvatarPicker.Models;
+
+namespace AvatarPicker.Services.Strategies;
 
 public class LastDigit6To9Strategy : IImageRetrievalStrategy
 {
