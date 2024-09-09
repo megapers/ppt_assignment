@@ -16,6 +16,7 @@ public class ImageService : IImageService
                 return await strategy.GetImageUrlAsync(userIdentifier);
             }
         }
+        
         return "https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150";
     }
 }

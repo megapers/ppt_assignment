@@ -11,6 +11,7 @@ public class ImageServiceTests
     private Mock<IImageRetrievalStrategy> _mockStrategyVowel;
     private Mock<IImageRetrievalStrategy> _mockStrategy6To9;
     private Mock<IImageRetrievalStrategy> _mockStrategy1To5;
+    private Mock<IImageRetrievalStrategy> _mockStrategyDefault;
     private ImageService _service;
 
     [SetUp]
@@ -20,12 +21,14 @@ public class ImageServiceTests
         _mockStrategyVowel = new Mock<IImageRetrievalStrategy>();
         _mockStrategy6To9 = new Mock<IImageRetrievalStrategy>();
         _mockStrategy1To5 = new Mock<IImageRetrievalStrategy>();
+        _mockStrategyDefault = new Mock<IImageRetrievalStrategy>();
         _service = new ImageService(new List<IImageRetrievalStrategy> 
         { 
             _mockStrategyNonAlphanumeric.Object,
             _mockStrategyVowel.Object,
             _mockStrategy6To9.Object, 
-            _mockStrategy1To5.Object 
+            _mockStrategy1To5.Object,
+            _mockStrategyDefault.Object
         });
     }
 
@@ -83,11 +86,28 @@ public class ImageServiceTests
     }
 
     [Test]
-    public async Task GetImageUrlAsync_ReturnsDefaultUrl_WhenNoStrategyApplies()
+    public async Task GetImageUrlAsync_ReturnsDefaultResult_WhenNoOtherStrategyApplies()
     {
+        _mockStrategyNonAlphanumeric.Setup(s => s.CanApply("xyz")).Returns(false);
         _mockStrategyVowel.Setup(s => s.CanApply("xyz")).Returns(false);
         _mockStrategy6To9.Setup(s => s.CanApply("xyz")).Returns(false);
         _mockStrategy1To5.Setup(s => s.CanApply("xyz")).Returns(false);
+        _mockStrategyDefault.Setup(s => s.CanApply("xyz")).Returns(true);
+        _mockStrategyDefault.Setup(s => s.GetImageUrlAsync("xyz")).ReturnsAsync("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150");
+
+        var result = await _service.GetImageUrlAsync("xyz");
+
+        Assert.That(result, Is.EqualTo("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150"));
+    }
+
+    [Test]
+    public async Task GetImageUrlAsync_ReturnsDefaultUrl_WhenNoStrategyApplies()
+    {
+        _mockStrategyNonAlphanumeric.Setup(s => s.CanApply("xyz")).Returns(false);
+        _mockStrategyVowel.Setup(s => s.CanApply("xyz")).Returns(false);
+        _mockStrategy6To9.Setup(s => s.CanApply("xyz")).Returns(false);
+        _mockStrategy1To5.Setup(s => s.CanApply("xyz")).Returns(false);
+        _mockStrategyDefault.Setup(s => s.CanApply("xyz")).Returns(false); // Change this to false
 
         var result = await _service.GetImageUrlAsync("xyz");
 
@@ -105,16 +125,19 @@ public class ImageServiceTests
             .Returns(false)
             .Callback<string>(_ => callOrder.Add("StrategyVowel"));
         _mockStrategy6To9.Setup(s => s.CanApply(It.IsAny<string>()))
-            .Returns(true)
+            .Returns(false)
             .Callback<string>(_ => callOrder.Add("Strategy6To9"));
-        _mockStrategy6To9.Setup(s => s.GetImageUrlAsync(It.IsAny<string>()))
-            .ReturnsAsync("https://test.com/image.png");
         _mockStrategy1To5.Setup(s => s.CanApply(It.IsAny<string>()))
             .Returns(false)
             .Callback<string>(_ => callOrder.Add("Strategy1To5"));
+        _mockStrategyDefault.Setup(s => s.CanApply(It.IsAny<string>()))
+            .Returns(true)
+            .Callback<string>(_ => callOrder.Add("StrategyDefault"));
+        _mockStrategyDefault.Setup(s => s.GetImageUrlAsync(It.IsAny<string>()))
+            .ReturnsAsync("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150");
 
-        await _service.GetImageUrlAsync("xyz6");
+        await _service.GetImageUrlAsync("xyz");
 
-        Assert.That(callOrder, Is.EqualTo(new[] { "StrategyNonAlphanumeric", "StrategyVowel", "Strategy6To9" }));
+        Assert.That(callOrder, Is.EqualTo(new[] { "StrategyNonAlphanumeric", "StrategyVowel", "Strategy6To9", "Strategy1To5", "StrategyDefault" }));
     }
 }

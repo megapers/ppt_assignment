@@ -15,6 +15,7 @@ builder.Services.AddScoped<IImageRetrievalStrategy, NonAlphanumericStrategy>();
 builder.Services.AddScoped<IImageRetrievalStrategy, ContainsVowelStrategy>();
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit6To9Strategy>();
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit1To5Strategy>();
+builder.Services.AddScoped<IImageRetrievalStrategy, DefaultStrategy>(); // Add this line
 builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
