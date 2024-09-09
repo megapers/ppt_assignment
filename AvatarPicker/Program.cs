@@ -11,7 +11,8 @@ builder.Services.AddDbContext<AvatarDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<IImageRetrievalStrategy, ContainsVowelStrategy>(); // Move this to the top
+builder.Services.AddScoped<IImageRetrievalStrategy, NonAlphanumericStrategy>();
+builder.Services.AddScoped<IImageRetrievalStrategy, ContainsVowelStrategy>();
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit6To9Strategy>();
 builder.Services.AddScoped<IImageRetrievalStrategy, LastDigit1To5Strategy>();
 builder.Services.AddScoped<IImageService, ImageService>();
