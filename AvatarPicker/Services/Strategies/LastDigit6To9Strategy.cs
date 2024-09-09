@@ -1,15 +1,16 @@
 using System.Text.Json;
 using AvatarPicker.Models;
+using System.Net.Http;
 
 namespace AvatarPicker.Services.Strategies;
 
 public class LastDigit6To9Strategy : IImageRetrievalStrategy
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly HttpClient _httpClient;
 
-    public LastDigit6To9Strategy(IWebHostEnvironment environment)
+    public LastDigit6To9Strategy(HttpClient httpClient)
     {
-        _environment = environment;
+        _httpClient = httpClient;
     }
 
     public bool CanApply(string userIdentifier)
@@ -19,21 +20,20 @@ public class LastDigit6To9Strategy : IImageRetrievalStrategy
 
     public async Task<string> GetImageUrlAsync(string userIdentifier)
     {
-        var lastDigit = int.Parse(userIdentifier[^1].ToString());
-        var jsonPath = Path.Combine(_environment.ContentRootPath, "Data", "db.json");
-        var jsonContent = await File.ReadAllTextAsync(jsonPath);
-        var options = new JsonSerializerOptions
+        var lastDigit = userIdentifier[^1];
+        var url = $"https://my-json-server.typicode.com/ck-pacificdev/tech-test/images/{lastDigit}";
+
+        try
         {
-            PropertyNameCaseInsensitive = true
-        };
-        var data = JsonSerializer.Deserialize<JsonData>(jsonContent, options);
-
-        var image = data?.Images.FirstOrDefault(i => i.Id == lastDigit);
-        return image?.Url ?? "https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150";
-    }
-
-    private class JsonData
-    {
-        public List<Image> Images { get; set; }
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            var image = JsonSerializer.Deserialize<Image>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return image?.Url ?? "https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150";
+        }
+        catch (HttpRequestException)
+        {
+            return "https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150";
+        }
     }
 }

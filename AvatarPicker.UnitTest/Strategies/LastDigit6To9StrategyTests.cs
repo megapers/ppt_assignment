@@ -1,27 +1,31 @@
 using Moq;
-using Microsoft.AspNetCore.Hosting;
+using Moq.Protected;
+using System.Net;
 using System.Text.Json;
 using AvatarPicker.Services.Strategies;
+using AvatarPicker.Models;
 
-namespace AvatarPicker.UnitTest;
+namespace AvatarPicker.UnitTest.Strategies;
 
 [TestFixture]
 public class LastDigit6To9StrategyTests
 {
-    private Mock<IWebHostEnvironment> _mockEnvironment;
+    private Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private HttpClient _httpClient;
     private LastDigit6To9Strategy _strategy;
 
     [SetUp]
     public void Setup()
     {
-        _mockEnvironment = new Mock<IWebHostEnvironment>();
-        _mockEnvironment.Setup(e => e.ContentRootPath).Returns(TestContext.CurrentContext.TestDirectory);
-        _strategy = new LastDigit6To9Strategy(_mockEnvironment.Object);
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
+        _strategy = new LastDigit6To9Strategy(_httpClient);
+    }
 
-        var mockData = new { images = new[] { new { id = 6, url = "https://test.com/image6.png" } } };
-        var json = JsonSerializer.Serialize(mockData);
-        Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data"));
-        File.WriteAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "db.json"), json);
+    [TearDown]
+    public void TearDown()
+    {
+        _httpClient.Dispose();
     }
 
     [TestCase("user6")]
@@ -44,22 +48,49 @@ public class LastDigit6To9StrategyTests
     [Test]
     public async Task GetImageUrlAsync_ReturnsCorrectUrl_ForValidIdentifier()
     {
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new Image { Id = 6, Url = "https://test.com/image6.png" }))
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(mockResponse);
+
         var result = await _strategy.GetImageUrlAsync("user6");
-        Assert.That("https://test.com/image6.png", Is.EqualTo(result));
+        Assert.That(result, Is.EqualTo("https://test.com/image6.png"));
     }
 
     [Test]
-    public async Task GetImageUrlAsync_ReturnsDefaultUrl_ForNonExistentImage()
+    public async Task GetImageUrlAsync_ReturnsDefaultUrl_ForHttpRequestException()
     {
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException());
+
         var result = await _strategy.GetImageUrlAsync("user7");
-        Assert.That("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150", Is.EqualTo(result));
+        Assert.That(result, Is.EqualTo("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150"));
     }
 
-    [TearDown]
-    public void TearDown()
+    [Test]
+    public async Task GetImageUrlAsync_ReturnsDefaultUrl_ForNonSuccessStatusCode()
     {
-        // Clean up the mock db.json file
-        File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "db.json"));
-        Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data"));
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.NotFound);
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(mockResponse);
+
+        var result = await _strategy.GetImageUrlAsync("user8");
+        Assert.That(result, Is.EqualTo("https://api.dicebear.com/8.x/pixel-art/png?seed=default&size=150"));
     }
 }
