@@ -1,6 +1,5 @@
 using System.Text.Json;
 using AvatarPicker.Models;
-using System.Net.Http;
 
 namespace AvatarPicker.Services.Strategies;
 

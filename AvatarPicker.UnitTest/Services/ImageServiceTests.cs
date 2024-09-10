@@ -1,6 +1,4 @@
 using Moq;
-using AvatarPicker.Services.Strategies;
-using System.Text.RegularExpressions;
 
 namespace AvatarPicker.UnitTest.Services;
 

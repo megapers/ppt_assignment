@@ -1,6 +1,4 @@
-using Microsoft.EntityFrameworkCore;
 using AvatarPicker.Data;
-using AvatarPicker.Models;
 
 namespace AvatarPicker.Services.Strategies;
 

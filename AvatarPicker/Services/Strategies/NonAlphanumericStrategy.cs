@@ -1,5 +1,3 @@
-using System;
-
 namespace AvatarPicker.Services.Strategies;
 
 public class NonAlphanumericStrategy : IImageRetrievalStrategy
